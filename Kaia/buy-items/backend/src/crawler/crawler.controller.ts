@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CrawlerService } from 'src/crawler/crawler.service';
 import { AddItemDto } from 'src/crawler/dto/AddItem.dto';
+import { BuyItemsDto } from 'src/crawler/dto/BuyItem.dto';
 
 @Controller('crawler')
 export class CrawlerController {
@@ -14,6 +15,11 @@ export class CrawlerController {
   @Get('items/:id')
   getItem(@Param('id') itemId: number) {
     return this.crawlerService.getItem(itemId);
+  }
+
+  @Post('items/:id')
+  buyItem(@Param('id') itemId: number, @Body() buyItemDto: BuyItemsDto) {
+    return this.crawlerService.buyItem(itemId, buyItemDto);
   }
 
   @Post('items/add')

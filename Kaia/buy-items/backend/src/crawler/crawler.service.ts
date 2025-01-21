@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 import { AddItemDto } from 'src/crawler/dto/AddItem.dto';
+import { BuyItemsDto } from 'src/crawler/dto/BuyItem.dto';
 import * as abi from './abi.json';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class CrawlerService implements OnModuleInit {
   private readonly logger = new Logger(CrawlerService.name);
   private contract: ethers.Contract;
   private signer: ethers.Wallet;
+  private provider: ethers.JsonRpcProvider;
+
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
@@ -19,18 +22,20 @@ export class CrawlerService implements OnModuleInit {
     const contractAddress = this.configService.get<string>(
       'kairos.contractAddress',
     );
-    const privateKey = this.configService.get<string>('kairos.privateKey');
+    const signaturePrivateKey = this.configService.get<string>(
+      'kairos.signerPrivateKey',
+    );
     const rpcUrl = this.configService.get<string>('kairos.rpcUrl');
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
     // Create signer only if a private key is provided
-    if (privateKey) {
-      this.signer = new ethers.Wallet(privateKey, provider);
+    if (signaturePrivateKey) {
+      this.signer = new ethers.Wallet(signaturePrivateKey, this.provider);
     }
     this.contract = new ethers.Contract(
       contractAddress,
       abi,
-      this.signer || provider, // Use signer if available, otherwise use provider
+      this.signer || this.provider, // Use signer if available, otherwise use provider
     );
     if (this.contract) {
       this.logger.log('Contract initialized successfully');
@@ -49,6 +54,19 @@ export class CrawlerService implements OnModuleInit {
   }
 
   async getItem(itemId: number) {
+    try {
+      const [name, price] = await this.contract.getItem(itemId);
+      this.logger.log(
+        `getItem called for itemId ${itemId}, result: ${name}, ${price}`,
+      );
+      return { name, price: price.toString() }; // Convert BigNumber if needed
+    } catch (error) {
+      this.logger.error(`Error calling getItem for itemId ${itemId}: ${error}`);
+      throw error;
+    }
+  }
+
+  async buyItem(itemId: number, buyItemDto: BuyItemsDto) {
     try {
       const [name, price] = await this.contract.getItem(itemId);
       this.logger.log(
