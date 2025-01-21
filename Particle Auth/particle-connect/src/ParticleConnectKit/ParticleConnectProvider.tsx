@@ -72,6 +72,7 @@ const config = createConfig({
     }),
   ],
   plugins: [
+    
     wallet({
       entryPosition: "bottom-right" as EntryPosition,
       visible: true,

@@ -4,20 +4,21 @@ import {
   useParticleAuth,
   useWallets,
 } from "@particle-network/connectkit";
-import { useEffect } from "react";
-import "./styles.css";
 import axios from "axios";
+import { useEffect } from "react";
+import CallTransaction from "./CallTransaction";
+import SocialLogin from "./SocialLogin";
+import "./styles.css";
 
-const BACKEND_URL = "http://localhost:3000";
+ 
+const BACKEND_URL = "https://spicy-panther-4.telebit.io";
 const ConnectWithConnectKit = () => {
-  const { address, isConnected, chainId } = useAccount();
+  const { address, isConnected, chainId   } = useAccount();
   const { getUserInfo } = useParticleAuth();
 
   // Retrieve the primary wallet from the Particle Wallets
   const [primaryWallet] = useWallets();
 
-  // Store userInfo in a useState to use it in your app
-  //  const [userInfo, setUserInfo] = useState<unknown>(null);
 
   useEffect(() => {
     const getProfile = async (access_token: string) => {
@@ -29,9 +30,11 @@ const ConnectWithConnectKit = () => {
     };
 
     const getAccessToken = async (token: string, uuid: string) => {
-      const { data } = await axios.post(BACKEND_URL + "/auth/access-token", {
-        token,
-        uuid,
+      const { data } = await axios.get(BACKEND_URL + "/auth/access-token", {
+        headers: {
+          "x-uuid": uuid,
+          "x-token": token,
+        },
       });
 
       console.log("getAccessToken :>> ", data);
@@ -56,6 +59,8 @@ const ConnectWithConnectKit = () => {
     fetchUserInfo();
   }, [isConnected, getUserInfo, primaryWallet?.connector?.walletConnectorType]);
 
+
+
   // Standard ConnectButton utilization
   return (
     <div>
@@ -65,8 +70,11 @@ const ConnectWithConnectKit = () => {
         <>
           <h2>Address: {address}</h2>
           <h2>Chain ID: {chainId}</h2>
+          <CallTransaction />
         </>
       )}
+      <SocialLogin/>
+      
     </div>
   );
 };
